@@ -24,11 +24,9 @@ func TestSlicePointerBinding(t *testing.T) {
 		})
 
 		ta, err := binder.TypeReference(schema.Query.Fields.ForName("messages").Type, nil)
-		if err != nil {
-			panic(err)
-		}
+		require.NoError(t, err)
 
-		require.Equal(t, ta.GO.String(), "[]*github.com/99designs/gqlgen/codegen/config/testdata/autobinding/chat.Message")
+		require.Equal(t, "[]*github.com/99designs/gqlgen/codegen/config/testdata/autobinding/chat.Message", ta.GO.String())
 	})
 
 	t.Run("with OmitSliceElementPointers", func(t *testing.T) {
@@ -37,11 +35,9 @@ func TestSlicePointerBinding(t *testing.T) {
 		})
 
 		ta, err := binder.TypeReference(schema.Query.Fields.ForName("messages").Type, nil)
-		if err != nil {
-			panic(err)
-		}
+		require.NoError(t, err)
 
-		require.Equal(t, ta.GO.String(), "[]github.com/99designs/gqlgen/codegen/config/testdata/autobinding/chat.Message")
+		require.Equal(t, "[]github.com/99designs/gqlgen/codegen/config/testdata/autobinding/chat.Message", ta.GO.String())
 	})
 }
 
@@ -50,19 +46,13 @@ func TestOmittableBinding(t *testing.T) {
 		binder, schema := createBinder(Config{})
 
 		ot, err := binder.FindType("github.com/99designs/gqlgen/graphql", "Omittable")
-		if err != nil {
-			panic(err)
-		}
+		require.NoError(t, err)
 
 		it, err := binder.InstantiateType(ot, []types.Type{types.Universe.Lookup("string").Type()})
-		if err != nil {
-			panic(err)
-		}
+		require.NoError(t, err)
 
 		ta, err := binder.TypeReference(schema.Types["FooInput"].Fields.ForName("nullableString").Type, it)
-		if err != nil {
-			panic(err)
-		}
+		require.NoError(t, err)
 
 		require.True(t, ta.IsOmittable)
 	})
@@ -71,19 +61,13 @@ func TestOmittableBinding(t *testing.T) {
 		binder, schema := createBinder(Config{})
 
 		ot, err := binder.FindType("github.com/99designs/gqlgen/graphql", "Omittable")
-		if err != nil {
-			panic(err)
-		}
+		require.NoError(t, err)
 
 		it, err := binder.InstantiateType(ot, []types.Type{types.NewPointer(types.Universe.Lookup("string").Type())})
-		if err != nil {
-			panic(err)
-		}
+		require.NoError(t, err)
 
 		ta, err := binder.TypeReference(schema.Types["FooInput"].Fields.ForName("nullableString").Type, it)
-		if err != nil {
-			panic(err)
-		}
+		require.NoError(t, err)
 
 		require.True(t, ta.IsOmittable)
 	})
@@ -92,14 +76,10 @@ func TestOmittableBinding(t *testing.T) {
 		binder, schema := createBinder(Config{})
 
 		ot, err := binder.FindType("github.com/99designs/gqlgen/graphql", "Omittable")
-		if err != nil {
-			panic(err)
-		}
+		require.NoError(t, err)
 
 		it, err := binder.InstantiateType(ot, []types.Type{types.Universe.Lookup("string").Type()})
-		if err != nil {
-			panic(err)
-		}
+		require.NoError(t, err)
 
 		_, err = binder.TypeReference(schema.Types["FooInput"].Fields.ForName("nonNullableString").Type, it)
 		require.Error(t, err)
@@ -109,14 +89,10 @@ func TestOmittableBinding(t *testing.T) {
 		binder, schema := createBinder(Config{})
 
 		ot, err := binder.FindType("github.com/99designs/gqlgen/graphql", "Omittable")
-		if err != nil {
-			panic(err)
-		}
+		require.NoError(t, err)
 
 		it, err := binder.InstantiateType(ot, []types.Type{types.NewPointer(types.Universe.Lookup("string").Type())})
-		if err != nil {
-			panic(err)
-		}
+		require.NoError(t, err)
 
 		_, err = binder.TypeReference(schema.Types["FooInput"].Fields.ForName("nonNullableString").Type, it)
 		require.Error(t, err)
@@ -126,24 +102,16 @@ func TestOmittableBinding(t *testing.T) {
 		binder, schema := createBinder(Config{})
 
 		typ, err := binder.FindType("github.com/99designs/gqlgen/codegen/config/testdata/autobinding/chat", "Message")
-		if err != nil {
-			panic(err)
-		}
+		require.NoError(t, err)
 
 		ot, err := binder.FindType("github.com/99designs/gqlgen/graphql", "Omittable")
-		if err != nil {
-			panic(err)
-		}
+		require.NoError(t, err)
 
 		it, err := binder.InstantiateType(ot, []types.Type{typ})
-		if err != nil {
-			panic(err)
-		}
+		require.NoError(t, err)
 
 		ta, err := binder.TypeReference(schema.Types["FooInput"].Fields.ForName("nullableObject").Type, it)
-		if err != nil {
-			panic(err)
-		}
+		require.NoError(t, err)
 
 		require.True(t, ta.IsOmittable)
 	})
@@ -152,24 +120,16 @@ func TestOmittableBinding(t *testing.T) {
 		binder, schema := createBinder(Config{})
 
 		typ, err := binder.FindType("github.com/99designs/gqlgen/codegen/config/testdata/autobinding/chat", "Message")
-		if err != nil {
-			panic(err)
-		}
+		require.NoError(t, err)
 
 		ot, err := binder.FindType("github.com/99designs/gqlgen/graphql", "Omittable")
-		if err != nil {
-			panic(err)
-		}
+		require.NoError(t, err)
 
 		it, err := binder.InstantiateType(ot, []types.Type{types.NewPointer(typ)})
-		if err != nil {
-			panic(err)
-		}
+		require.NoError(t, err)
 
 		ta, err := binder.TypeReference(schema.Types["FooInput"].Fields.ForName("nullableObject").Type, it)
-		if err != nil {
-			panic(err)
-		}
+		require.NoError(t, err)
 
 		require.True(t, ta.IsOmittable)
 	})
@@ -219,16 +179,16 @@ func TestEnumBinding(t *testing.T) {
 	cf.Models = TypeMap{
 		"Bar": TypeMapEntry{
 			Model: []string{"github.com/99designs/gqlgen/codegen/config/testdata/enum.Bar"},
-			EnumValues: map[string]string{
-				"ONE": "github.com/99designs/gqlgen/codegen/config/testdata/enum.BarOne",
-				"TWO": "github.com/99designs/gqlgen/codegen/config/testdata/enum.BarTwo",
+			EnumValues: map[string]EnumValue{
+				"ONE": {Value: "github.com/99designs/gqlgen/codegen/config/testdata/enum.BarOne"},
+				"TWO": {Value: "github.com/99designs/gqlgen/codegen/config/testdata/enum.BarTwo"},
 			},
 		},
 		"Baz": TypeMapEntry{
 			Model: []string{"github.com/99designs/gqlgen/graphql.Int"},
-			EnumValues: map[string]string{
-				"ONE": "github.com/99designs/gqlgen/codegen/config/testdata/enum.BazOne",
-				"TWO": "github.com/99designs/gqlgen/codegen/config/testdata/enum.BazTwo",
+			EnumValues: map[string]EnumValue{
+				"ONE": {Value: "github.com/99designs/gqlgen/codegen/config/testdata/enum.BazOne"},
+				"TWO": {Value: "github.com/99designs/gqlgen/codegen/config/testdata/enum.BazTwo"},
 			},
 		},
 		"String": TypeMapEntry{
@@ -268,14 +228,14 @@ func TestEnumBinding(t *testing.T) {
 
 	require.NotNil(t, barOne)
 	require.NoError(t, err)
-	require.Equal(t, barOne, bar.EnumValues[0].Type)
+	require.Equal(t, barOne, bar.EnumValues[0].Object)
 	require.Equal(t, cf.Schema.Types["Bar"].EnumValues[0], bar.EnumValues[0].Definition)
 
 	barTwo, err := binder.FindObject("github.com/99designs/gqlgen/codegen/config/testdata/enum", "BarTwo")
 
 	require.NotNil(t, barTwo)
 	require.NoError(t, err)
-	require.Equal(t, barTwo, bar.EnumValues[1].Type)
+	require.Equal(t, barTwo, bar.EnumValues[1].Object)
 	require.Equal(t, cf.Schema.Types["Bar"].EnumValues[1], bar.EnumValues[1].Definition)
 
 	bazType, err := binder.FindType("github.com/99designs/gqlgen/graphql", "Int")
@@ -294,13 +254,13 @@ func TestEnumBinding(t *testing.T) {
 
 	require.NotNil(t, bazOne)
 	require.NoError(t, err)
-	require.Equal(t, bazOne, baz.EnumValues[0].Type)
+	require.Equal(t, bazOne, baz.EnumValues[0].Object)
 	require.Equal(t, cf.Schema.Types["Baz"].EnumValues[0], baz.EnumValues[0].Definition)
 
 	bazTwo, err := binder.FindObject("github.com/99designs/gqlgen/codegen/config/testdata/enum", "BazTwo")
 
 	require.NotNil(t, bazTwo)
 	require.NoError(t, err)
-	require.Equal(t, bazTwo, baz.EnumValues[1].Type)
+	require.Equal(t, bazTwo, baz.EnumValues[1].Object)
 	require.Equal(t, cf.Schema.Types["Baz"].EnumValues[1], baz.EnumValues[1].Definition)
 }

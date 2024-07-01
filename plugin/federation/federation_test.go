@@ -46,7 +46,7 @@ func TestWithEntities(t *testing.T) {
 	require.Equal(t, "String", f.Entities[1].Resolvers[0].KeyFields[0].Definition.Type.Name())
 
 	require.Equal(t, "MoreNesting", f.Entities[2].Name)
-	require.Len(t, f.Entities[2].Resolvers, 0)
+	require.Empty(t, f.Entities[2].Resolvers)
 
 	require.Equal(t, "MultiHelloMultiKey", f.Entities[3].Name)
 	require.Len(t, f.Entities[3].Resolvers, 2)
@@ -80,8 +80,8 @@ func TestWithEntities(t *testing.T) {
 	require.Equal(t, "String", f.Entities[5].Resolvers[0].KeyFields[4].Definition.Type.Name())
 
 	require.Len(t, f.Entities[5].Requires, 2)
-	require.Equal(t, f.Entities[5].Requires[0].Name, "id")
-	require.Equal(t, f.Entities[5].Requires[1].Name, "helloSecondary")
+	require.Equal(t, "id", f.Entities[5].Requires[0].Name)
+	require.Equal(t, "helloSecondary", f.Entities[5].Requires[1].Name)
 
 	require.Equal(t, "World", f.Entities[6].Name)
 	require.Len(t, f.Entities[6].Resolvers, 2)
@@ -98,7 +98,7 @@ func TestNoEntities(t *testing.T) {
 
 	err := f.MutateConfig(cfg)
 	require.NoError(t, err)
-	require.Len(t, f.Entities, 0)
+	require.Empty(t, f.Entities)
 }
 
 func TestUnusedInterfaceKeyDirective(t *testing.T) {
@@ -106,7 +106,7 @@ func TestUnusedInterfaceKeyDirective(t *testing.T) {
 
 	err := f.MutateConfig(cfg)
 	require.NoError(t, err)
-	require.Len(t, f.Entities, 0)
+	require.Empty(t, f.Entities)
 }
 
 func TestInterfaceKeyDirective(t *testing.T) {
@@ -143,9 +143,7 @@ func TestCodeGeneration(t *testing.T) {
 	require.NoError(t, f.MutateConfig(cfg))
 
 	data, err := codegen.BuildData(cfg)
-	if err != nil {
-		panic(err)
-	}
+	require.NoError(t, err)
 	require.NoError(t, f.GenerateCode(data))
 }
 
@@ -162,16 +160,13 @@ func TestCodeGenerationFederation2(t *testing.T) {
 	require.Empty(t, f.Entities[2].Resolvers)
 
 	data, err := codegen.BuildData(cfg)
-	if err != nil {
-		panic(err)
-	}
+	require.NoError(t, err)
 	require.NoError(t, f.GenerateCode(data))
 }
 
 // This test is to ensure that the input arguments are not
 // changed when cfg.OmitSliceElementPointers is false OR true
 func TestMultiWithOmitSliceElemPointersCfg(t *testing.T) {
-
 	staticRepsString := "reps: [HelloByNamesInput]!"
 	t.Run("OmitSliceElementPointers true", func(t *testing.T) {
 		f, cfg := load(t, "testdata/multi/multi.yml")
@@ -214,7 +209,7 @@ func TestMultiWithOmitSliceElemPointersCfg(t *testing.T) {
 
 func TestHandlesRequiresArgumentCorrectlyIfNoSpace(t *testing.T) {
 	requiresFieldSet := fieldset.New("foo bar baz(limit:4)", nil)
-	assert.Equal(t, 3, len(requiresFieldSet))
+	assert.Len(t, requiresFieldSet, 3)
 	assert.Equal(t, "Foo", requiresFieldSet[0].ToGo())
 	assert.Equal(t, "Bar", requiresFieldSet[1].ToGo())
 	assert.Equal(t, "Baz(limit:4)", requiresFieldSet[2].ToGo())
@@ -231,7 +226,6 @@ func TestHandlesArgumentGeneration(t *testing.T) {
 	raw := "foo bar baz(limit:4)"
 	requiresFieldSet := fieldset.New(raw, nil)
 	for _, field := range requiresFieldSet {
-
 		e.Requires = append(e.Requires, &Requires{
 			Name:  field.ToGoPrivate(),
 			Field: field,
@@ -290,11 +284,15 @@ func load(t *testing.T, name string) (*federation, *config.Config) {
 	}
 
 	f := &federation{Version: cfg.Federation.Version}
-	cfg.Sources = append(cfg.Sources, f.InjectSourceEarly())
+	s, err := f.InjectSourcesEarly()
+	require.NoError(t, err)
+	cfg.Sources = append(cfg.Sources, s...)
 	require.NoError(t, cfg.LoadSchema())
 
-	if src := f.InjectSourceLate(cfg.Schema); src != nil {
-		cfg.Sources = append(cfg.Sources, src)
+	l, err := f.InjectSourcesLate(cfg.Schema)
+	require.NoError(t, err)
+	if l != nil {
+		cfg.Sources = append(cfg.Sources, l...)
 	}
 	require.NoError(t, cfg.LoadSchema())
 

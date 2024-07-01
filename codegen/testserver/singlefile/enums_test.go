@@ -26,7 +26,7 @@ func TestEnumsResolver(t *testing.T) {
 			enumInInput(input: {enum: OK})
 		}
 		`, &resp)
-		require.Equal(t, resp.EnumInInput, EnumTestOk)
+		require.Equal(t, EnumTestOk, resp.EnumInInput)
 	})
 
 	t.Run("input with invalid enum value", func(t *testing.T) {
@@ -47,7 +47,7 @@ func TestEnumsResolver(t *testing.T) {
 		err := c.Post(`query ($input: InputWithEnumValue) {
 			enumInInput(input: $input)
 		}
-		`, &resp, client.Var("input", map[string]interface{}{"enum": "INVALID"}))
+		`, &resp, client.Var("input", map[string]any{"enum": "INVALID"}))
 		require.EqualError(t, err, `http 422: {"errors":[{"message":"INVALID is not a valid EnumTest","path":["variable","input","enum"],"extensions":{"code":"GRAPHQL_VALIDATION_FAILED"}}],"data":null}`)
 	})
 }

@@ -39,12 +39,14 @@ func TestChatSubscriptions(t *testing.T) {
 			}
 
 			msg.err = sub.Next(&msg.resp)
-			require.NoError(t, msg.err, "sub.Next")
-			require.Equal(t, "You've joined the room", msg.resp.MessageAdded.Text)
-			require.Equal(t, "system", msg.resp.MessageAdded.CreatedBy)
+			if !assert.NoError(t, msg.err, "sub.Next") {
+				return
+			}
+			assert.Equal(t, "You've joined the room", msg.resp.MessageAdded.Text)
+			assert.Equal(t, "system", msg.resp.MessageAdded.CreatedBy)
 
 			go func() {
-				var resp interface{}
+				var resp any
 				err := c.Post(fmt.Sprintf(`mutation {
 					a:post(text:"Hello!", roomName:"#gophers%d", username:"vektah") { id }
 					b:post(text:"Hello Vektah!", roomName:"#gophers%d", username:"andrey") { id }
@@ -54,14 +56,18 @@ func TestChatSubscriptions(t *testing.T) {
 			}()
 
 			msg.err = sub.Next(&msg.resp)
-			require.NoError(t, msg.err, "sub.Next")
-			require.Equal(t, "Hello!", msg.resp.MessageAdded.Text)
-			require.Equal(t, "vektah", msg.resp.MessageAdded.CreatedBy)
+			if !assert.NoError(t, msg.err, "sub.Next") {
+				return
+			}
+			assert.Equal(t, "Hello!", msg.resp.MessageAdded.Text)
+			assert.Equal(t, "vektah", msg.resp.MessageAdded.CreatedBy)
 
 			msg.err = sub.Next(&msg.resp)
-			require.NoError(t, msg.err, "sub.Next")
-			require.Equal(t, "Whats up?", msg.resp.MessageAdded.Text)
-			require.Equal(t, "vektah", msg.resp.MessageAdded.CreatedBy)
+			if !assert.NoError(t, msg.err, "sub.Next") {
+				return
+			}
+			assert.Equal(t, "Whats up?", msg.resp.MessageAdded.Text)
+			assert.Equal(t, "vektah", msg.resp.MessageAdded.CreatedBy)
 		}(i)
 		// wait for goroutines to finish every N tests to not starve on CPU
 		if (i+1)%batchSize == 0 {

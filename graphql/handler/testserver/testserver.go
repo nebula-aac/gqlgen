@@ -2,6 +2,7 @@ package testserver
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -58,7 +59,7 @@ func New() *TestServer {
 							},
 						},
 					})
-					res, err := graphql.GetOperationContext(ctx).ResolverMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+					res, err := graphql.GetOperationContext(ctx).ResolverMiddleware(ctx, func(ctx context.Context) (any, error) {
 						return &graphql.Response{Data: []byte(`{"name":"test"}`)}, nil
 					})
 					if err != nil {
@@ -88,7 +89,7 @@ func New() *TestServer {
 		SchemaFunc: func() *ast.Schema {
 			return schema
 		},
-		ComplexityFunc: func(typeName string, fieldName string, childComplexity int, args map[string]interface{}) (i int, b bool) {
+		ComplexityFunc: func(typeName string, fieldName string, childComplexity int, args map[string]any) (i int, b bool) {
 			return srv.complexity, true
 		},
 	})
@@ -122,7 +123,7 @@ func NewError() *TestServer {
 					}
 					ran = true
 
-					graphql.AddError(ctx, fmt.Errorf("resolver error"))
+					graphql.AddError(ctx, errors.New("resolver error"))
 
 					return &graphql.Response{
 						Data: []byte(`null`),
@@ -139,7 +140,7 @@ func NewError() *TestServer {
 		SchemaFunc: func() *ast.Schema {
 			return schema
 		},
-		ComplexityFunc: func(typeName string, fieldName string, childComplexity int, args map[string]interface{}) (i int, b bool) {
+		ComplexityFunc: func(typeName string, fieldName string, childComplexity int, args map[string]any) (i int, b bool) {
 			return srv.complexity, true
 		},
 	})

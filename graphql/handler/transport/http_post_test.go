@@ -26,35 +26,35 @@ func TestPOST(t *testing.T) {
 	t.Run("decode failure", func(t *testing.T) {
 		resp := doRequest(h, "POST", "/graphql", "notjson", "application/json")
 		assert.Equal(t, http.StatusBadRequest, resp.Code, resp.Body.String())
-		assert.Equal(t, resp.Header().Get("Content-Type"), "application/json")
+		assert.Equal(t, "application/json", resp.Header().Get("Content-Type"))
 		assert.Equal(t, `{"errors":[{"message":"json request body could not be decoded: invalid character 'o' in literal null (expecting 'u') body:notjson"}],"data":null}`, resp.Body.String())
 	})
 
 	t.Run("parse failure", func(t *testing.T) {
 		resp := doRequest(h, "POST", "/graphql", `{"query": "!"}`, "application/json")
 		assert.Equal(t, http.StatusUnprocessableEntity, resp.Code, resp.Body.String())
-		assert.Equal(t, resp.Header().Get("Content-Type"), "application/json")
+		assert.Equal(t, "application/json", resp.Header().Get("Content-Type"))
 		assert.Equal(t, `{"errors":[{"message":"Unexpected !","locations":[{"line":1,"column":1}],"extensions":{"code":"GRAPHQL_PARSE_FAILED"}}],"data":null}`, resp.Body.String())
 	})
 
 	t.Run("validation failure", func(t *testing.T) {
 		resp := doRequest(h, "POST", "/graphql", `{"query": "{ title }"}`, "application/json")
 		assert.Equal(t, http.StatusUnprocessableEntity, resp.Code, resp.Body.String())
-		assert.Equal(t, resp.Header().Get("Content-Type"), "application/json")
+		assert.Equal(t, "application/json", resp.Header().Get("Content-Type"))
 		assert.Equal(t, `{"errors":[{"message":"Cannot query field \"title\" on type \"Query\".","locations":[{"line":1,"column":3}],"extensions":{"code":"GRAPHQL_VALIDATION_FAILED"}}],"data":null}`, resp.Body.String())
 	})
 
 	t.Run("invalid variable", func(t *testing.T) {
 		resp := doRequest(h, "POST", "/graphql", `{"query": "query($id:Int!){find(id:$id)}","variables":{"id":false}}`, "application/json")
 		assert.Equal(t, http.StatusUnprocessableEntity, resp.Code, resp.Body.String())
-		assert.Equal(t, resp.Header().Get("Content-Type"), "application/json")
+		assert.Equal(t, "application/json", resp.Header().Get("Content-Type"))
 		assert.Equal(t, `{"errors":[{"message":"cannot use bool as Int","path":["variable","id"],"extensions":{"code":"GRAPHQL_VALIDATION_FAILED"}}],"data":null}`, resp.Body.String())
 	})
 
 	t.Run("execution failure", func(t *testing.T) {
 		resp := doRequest(h, "POST", "/graphql", `{"query": "mutation { name }"}`, "application/json")
 		assert.Equal(t, http.StatusOK, resp.Code, resp.Body.String())
-		assert.Equal(t, resp.Header().Get("Content-Type"), "application/json")
+		assert.Equal(t, "application/json", resp.Header().Get("Content-Type"))
 		assert.Equal(t, `{"errors":[{"message":"mutations are not supported"}],"data":null}`, resp.Body.String())
 	})
 
@@ -96,9 +96,25 @@ func TestPOST(t *testing.T) {
 			})
 		}
 	})
+
+	t.Run("validate SSE", func(t *testing.T) {
+		doReq := func(handler http.Handler, method string, target string, body string) *httptest.ResponseRecorder {
+			r := httptest.NewRequest(method, target, strings.NewReader(body))
+			r.Header.Set("Content-Type", "application/json")
+			r.Header.Set("Accept", "text/event-stream")
+			w := httptest.NewRecorder()
+
+			handler.ServeHTTP(w, r)
+			return w
+		}
+
+		resp := doReq(h, "POST", "/graphql", `{"query":"{ name }"}`)
+		assert.Equal(t, http.StatusBadRequest, resp.Code, resp.Body.String())
+		assert.Equal(t, `{"errors":[{"message":"transport not supported"}],"data":null}`, resp.Body.String())
+	})
 }
 
-func doRequest(handler http.Handler, method string, target string, body string, contentType string) *httptest.ResponseRecorder {
+func doRequest(handler http.Handler, method, target, body, contentType string) *httptest.ResponseRecorder {
 	r := httptest.NewRequest(method, target, strings.NewReader(body))
 	r.Header.Set("Content-Type", contentType)
 	w := httptest.NewRecorder()

@@ -23,14 +23,17 @@ func TestFileUpload(t *testing.T) {
 	defer srv.Close()
 	gql := gqlclient.New(srv.Config.Handler, gqlclient.Path("/graphql"))
 
-	aTxtFile, _ := os.CreateTemp(os.TempDir(), "a.txt")
-	defer os.Remove(aTxtFile.Name())
+	aTxtFile, err := os.CreateTemp(t.TempDir(), "a.txt")
+	require.NoError(t, err)
+	defer aTxtFile.Close()
 	aTxtFile.WriteString(`test`)
 
-	a1TxtFile, _ := os.CreateTemp(os.TempDir(), "a.txt")
-	b1TxtFile, _ := os.CreateTemp(os.TempDir(), "b.txt")
-	defer os.Remove(a1TxtFile.Name())
-	defer os.Remove(b1TxtFile.Name())
+	a1TxtFile, err := os.CreateTemp(t.TempDir(), "a.txt")
+	require.NoError(t, err)
+	defer a1TxtFile.Close()
+	b1TxtFile, err := os.CreateTemp(t.TempDir(), "b.txt")
+	require.NoError(t, err)
+	defer b1TxtFile.Close()
 	a1TxtFile.WriteString(`test1`)
 	b1TxtFile.WriteString(`test2`)
 
@@ -39,8 +42,8 @@ func TestFileUpload(t *testing.T) {
 			require.NotNil(t, file)
 			require.NotNil(t, file.File)
 			content, err := io.ReadAll(file.File)
-			require.Nil(t, err)
-			require.Equal(t, string(content), "test")
+			require.NoError(t, err)
+			require.Equal(t, "test", string(content))
 
 			return &model.File{
 				ID:          1,
@@ -63,7 +66,7 @@ func TestFileUpload(t *testing.T) {
 		}
 
 		err := gql.Post(mutation, &result, gqlclient.Var("file", aTxtFile), gqlclient.WithFiles())
-		require.Nil(t, err)
+		require.NoError(t, err)
 		require.Equal(t, 1, result.SingleUpload.ID)
 		require.Contains(t, result.SingleUpload.Name, "a.txt")
 		require.Equal(t, "test", result.SingleUpload.Content)
@@ -72,12 +75,12 @@ func TestFileUpload(t *testing.T) {
 
 	t.Run("valid single file upload with payload", func(t *testing.T) {
 		resolver.MutationResolver.SingleUploadWithPayload = func(ctx context.Context, req model.UploadFile) (*model.File, error) {
-			require.Equal(t, req.ID, 1)
+			require.Equal(t, 1, req.ID)
 			require.NotNil(t, req.File)
 			require.NotNil(t, req.File.File)
 			content, err := io.ReadAll(req.File.File)
-			require.Nil(t, err)
-			require.Equal(t, string(content), "test")
+			require.NoError(t, err)
+			require.Equal(t, "test", string(content))
 
 			return &model.File{
 				ID:          1,
@@ -99,8 +102,8 @@ func TestFileUpload(t *testing.T) {
 			SingleUploadWithPayload *model.File
 		}
 
-		err := gql.Post(mutation, &result, gqlclient.Var("req", map[string]interface{}{"id": 1, "file": aTxtFile}), gqlclient.WithFiles())
-		require.Nil(t, err)
+		err := gql.Post(mutation, &result, gqlclient.Var("req", map[string]any{"id": 1, "file": aTxtFile}), gqlclient.WithFiles())
+		require.NoError(t, err)
 		require.Equal(t, 1, result.SingleUploadWithPayload.ID)
 		require.Contains(t, result.SingleUploadWithPayload.Name, "a.txt")
 		require.Equal(t, "test", result.SingleUploadWithPayload.Content)
@@ -115,7 +118,7 @@ func TestFileUpload(t *testing.T) {
 			for i := range files {
 				require.NotNil(t, files[i].File)
 				content, err := io.ReadAll(files[i].File)
-				require.Nil(t, err)
+				require.NoError(t, err)
 				contents = append(contents, string(content))
 				resp = append(resp, &model.File{
 					ID:          i + 1,
@@ -141,7 +144,7 @@ func TestFileUpload(t *testing.T) {
 		}
 
 		err := gql.Post(mutation, &result, gqlclient.Var("files", []*os.File{a1TxtFile, b1TxtFile}), gqlclient.WithFiles())
-		require.Nil(t, err)
+		require.NoError(t, err)
 		require.Equal(t, 1, result.MultipleUpload[0].ID)
 		require.Equal(t, 2, result.MultipleUpload[1].ID)
 		for _, mu := range result.MultipleUpload {
@@ -165,7 +168,7 @@ func TestFileUpload(t *testing.T) {
 				require.NotNil(t, req[i].File)
 				require.NotNil(t, req[i].File.File)
 				content, err := io.ReadAll(req[i].File.File)
-				require.Nil(t, err)
+				require.NoError(t, err)
 				ids = append(ids, req[i].ID)
 				contents = append(contents, string(content))
 				resp = append(resp, &model.File{
@@ -192,11 +195,11 @@ func TestFileUpload(t *testing.T) {
 			MultipleUploadWithPayload []*model.File
 		}
 
-		err := gql.Post(mutation, &result, gqlclient.Var("req", []map[string]interface{}{
+		err := gql.Post(mutation, &result, gqlclient.Var("req", []map[string]any{
 			{"id": 1, "file": a1TxtFile},
 			{"id": 2, "file": b1TxtFile},
 		}), gqlclient.WithFiles())
-		require.Nil(t, err)
+		require.NoError(t, err)
 		require.Equal(t, 1, result.MultipleUploadWithPayload[0].ID)
 		require.Equal(t, 2, result.MultipleUploadWithPayload[1].ID)
 		for _, mu := range result.MultipleUploadWithPayload {
@@ -267,11 +270,11 @@ func TestFileUpload(t *testing.T) {
 				MultipleUploadWithPayload []*model.File
 			}
 
-			err := gql.Post(mutation, &result, gqlclient.Var("req", []map[string]interface{}{
+			err := gql.Post(mutation, &result, gqlclient.Var("req", []map[string]any{
 				{"id": 1, "file": a1TxtFile},
 				{"id": 2, "file": a1TxtFile},
 			}), gqlclient.WithFiles())
-			require.Nil(t, err)
+			require.NoError(t, err)
 			require.Equal(t, 1, result.MultipleUploadWithPayload[0].ID)
 			require.Contains(t, result.MultipleUploadWithPayload[0].Name, "a.txt")
 			require.Equal(t, "test1", result.MultipleUploadWithPayload[0].Content)

@@ -308,7 +308,7 @@ func Test_wordWalker(t *testing.T) {
 
 	for i, at := range theTests {
 		t.Run(fmt.Sprintf("wordWalker-%d", i), func(t *testing.T) {
-			require.Equal(t, at.input, at.expected)
+			require.Equal(t, at.expected, at.input)
 		})
 	}
 }
@@ -320,12 +320,11 @@ func TestCenter(t *testing.T) {
 }
 
 func TestTemplateOverride(t *testing.T) {
-	f, err := os.CreateTemp("", "gqlgen")
+	f, err := os.CreateTemp(t.TempDir(), "gqlgen")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer f.Close()
-	defer os.RemoveAll(f.Name())
 	err = Render(Options{Template: "hello", Filename: f.Name(), Packages: code.NewPackages()})
 	if err != nil {
 		t.Fatal(err)
@@ -333,7 +332,6 @@ func TestTemplateOverride(t *testing.T) {
 }
 
 func TestRenderFS(t *testing.T) {
-
 	tempDir := t.TempDir()
 
 	outDir := filepath.Join(tempDir, "output")
@@ -345,7 +343,6 @@ func TestRenderFS(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer f.Close()
-	defer os.RemoveAll(f.Name())
 	err = Render(Options{TemplateFS: templateFS, Filename: f.Name(), Packages: code.NewPackages()})
 	if err != nil {
 		t.Fatal(err)

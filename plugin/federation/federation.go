@@ -101,7 +101,7 @@ func (f *federation) MutateConfig(cfg *config.Config) error {
 	return nil
 }
 
-func (f *federation) InjectSourceEarly() *ast.Source {
+func (f *federation) InjectSourcesEarly() ([]*ast.Source, error) {
 	input := ``
 
 	// add version-specific changes on key directive, as well as adding the new directives for federation 2
@@ -136,7 +136,7 @@ func (f *federation) InjectSourceEarly() *ast.Source {
 	directive @interfaceObject on OBJECT
 	directive @link(import: [String!], url: String!) repeatable on SCHEMA
 	directive @override(from: String!, label: String) on FIELD_DEFINITION
-	directive @policy(policies: [[federation__Policy!]!]!) on 
+	directive @policy(policies: [[federation__Policy!]!]!) on
 	  | FIELD_DEFINITION
 	  | OBJECT
 	  | INTERFACE
@@ -144,7 +144,7 @@ func (f *federation) InjectSourceEarly() *ast.Source {
 	  | ENUM
 	directive @provides(fields: FieldSet!) on FIELD_DEFINITION
 	directive @requires(fields: FieldSet!) on FIELD_DEFINITION
-	directive @requiresScopes(scopes: [[federation__Scope!]!]!) on 
+	directive @requiresScopes(scopes: [[federation__Scope!]!]!) on
 	  | FIELD_DEFINITION
 	  | OBJECT
 	  | INTERFACE
@@ -168,21 +168,21 @@ func (f *federation) InjectSourceEarly() *ast.Source {
 	scalar federation__Scope
 `
 	}
-	return &ast.Source{
+
+	return []*ast.Source{{
 		Name:    "federation/directives.graphql",
 		Input:   input,
 		BuiltIn: true,
-	}
+	}}, nil
 }
 
 // InjectSourceLate creates a GraphQL Entity type with all
 // the fields that had the @key directive
-func (f *federation) InjectSourceLate(schema *ast.Schema) *ast.Source {
+func (f *federation) InjectSourcesLate(schema *ast.Schema) ([]*ast.Source, error) {
 	f.setEntities(schema)
 
 	var entities, resolvers, entityResolverInputDefinitions string
 	for _, e := range f.Entities {
-
 		if e.Def.Kind != ast.Interface {
 			if entities != "" {
 				entities += " | "
@@ -260,11 +260,11 @@ type Entity {
 }`
 	blocks = append(blocks, extendTypeQueryDef)
 
-	return &ast.Source{
+	return []*ast.Source{{
 		Name:    "federation/entity.graphql",
 		BuiltIn: true,
 		Input:   "\n" + strings.Join(blocks, "\n\n") + "\n",
-	}
+	}}, nil
 }
 
 func (f *federation) GenerateCode(data *codegen.Data) error {
@@ -329,7 +329,6 @@ func (f *federation) GenerateCode(data *codegen.Data) error {
 
 			// add type info to entity
 			e.Type = obj.Type
-
 		}
 	}
 
@@ -416,7 +415,6 @@ func (f *federation) GenerateCode(data *codegen.Data) error {
 		if err != nil {
 			return err
 		}
-
 	}
 
 	return templates.Render(templates.Options{

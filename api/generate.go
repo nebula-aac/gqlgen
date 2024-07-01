@@ -13,6 +13,11 @@ import (
 	"github.com/99designs/gqlgen/plugin/resolvergen"
 )
 
+var (
+	urlRegex     = regexp.MustCompile(`(?s)@link.*\(.*url:.*?"(.*?)"[^)]+\)`) // regex to grab the url of a link directive, should it exist
+	versionRegex = regexp.MustCompile(`v(\d+).(\d+)$`)                        // regex to grab the version number from a url
+)
+
 func Generate(cfg *config.Config, option ...Option) error {
 	_ = syscall.Unlink(cfg.Exec.Filename)
 	if cfg.Model.IsDefined() {
@@ -26,8 +31,6 @@ func Generate(cfg *config.Config, option ...Option) error {
 	plugins = append(plugins, resolvergen.New())
 	if cfg.Federation.IsDefined() {
 		if cfg.Federation.Version == 0 { // default to using the user's choice of version, but if unset, try to sort out which federation version to use
-			urlRegex := regexp.MustCompile(`(?s)@link.*\(.*url:.*?"(.*?)"[^)]+\)`) // regex to grab the url of a link directive, should it exist
-			versionRegex := regexp.MustCompile(`v(\d+).(\d+)$`)                    // regex to grab the version number from a url
 			// check the sources, and if one is marked as federation v2, we mark the entirety to be generated using that format
 			for _, v := range cfg.Sources {
 				cfg.Federation.Version = 1
@@ -55,6 +58,13 @@ func Generate(cfg *config.Config, option ...Option) error {
 				cfg.Sources = append(cfg.Sources, s)
 			}
 		}
+		if inj, ok := p.(plugin.EarlySourcesInjector); ok {
+			s, err := inj.InjectSourcesEarly()
+			if err != nil {
+				return fmt.Errorf("%s: %w", p.Name(), err)
+			}
+			cfg.Sources = append(cfg.Sources, s...)
+		}
 	}
 
 	if err := cfg.LoadSchema(); err != nil {
@@ -66,6 +76,13 @@ func Generate(cfg *config.Config, option ...Option) error {
 			if s := inj.InjectSourceLate(cfg.Schema); s != nil {
 				cfg.Sources = append(cfg.Sources, s)
 			}
+		}
+		if inj, ok := p.(plugin.LateSourcesInjector); ok {
+			s, err := inj.InjectSourcesLate(cfg.Schema)
+			if err != nil {
+				return fmt.Errorf("%s: %w", p.Name(), err)
+			}
+			cfg.Sources = append(cfg.Sources, s...)
 		}
 	}
 
@@ -87,11 +104,11 @@ func Generate(cfg *config.Config, option ...Option) error {
 		}
 	}
 	// Merge again now that the generated models have been injected into the typemap
-	data_plugins := make([]interface{}, len(plugins))
+	dataPlugins := make([]any, len(plugins))
 	for index := range plugins {
-		data_plugins[index] = plugins[index]
+		dataPlugins[index] = plugins[index]
 	}
-	data, err := codegen.BuildData(cfg, data_plugins...)
+	data, err := codegen.BuildData(cfg, dataPlugins...)
 	if err != nil {
 		return fmt.Errorf("merging type systems failed: %w", err)
 	}

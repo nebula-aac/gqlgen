@@ -27,14 +27,14 @@ func TestExecutor(t *testing.T) {
 		t.Run("no operation", func(t *testing.T) {
 			resp := query(exec, "", "")
 			assert.Equal(t, "", string(resp.Data))
-			assert.Equal(t, 1, len(resp.Errors))
+			assert.Len(t, resp.Errors, 1)
 			assert.Equal(t, errcode.ValidationFailed, resp.Errors[0].Extensions["code"])
 		})
 
 		t.Run("bad operation", func(t *testing.T) {
 			resp := query(exec, "badOp", "query test { name }")
 			assert.Equal(t, "", string(resp.Data))
-			assert.Equal(t, 1, len(resp.Errors))
+			assert.Len(t, resp.Errors, 1)
 			assert.Equal(t, errcode.ValidationFailed, resp.Errors[0].Extensions["code"])
 		})
 	})
@@ -89,11 +89,11 @@ func TestExecutor(t *testing.T) {
 
 	t.Run("invokes field middleware in order", func(t *testing.T) {
 		var calls []string
-		exec.AroundFields(func(ctx context.Context, next graphql.Resolver) (res interface{}, err error) {
+		exec.AroundFields(func(ctx context.Context, next graphql.Resolver) (res any, err error) {
 			calls = append(calls, "first")
 			return next(ctx)
 		})
-		exec.AroundFields(func(ctx context.Context, next graphql.Resolver) (res interface{}, err error) {
+		exec.AroundFields(func(ctx context.Context, next graphql.Resolver) (res any, err error) {
 			calls = append(calls, "second")
 			return next(ctx)
 		})
@@ -134,9 +134,9 @@ func TestExecutor(t *testing.T) {
 
 		resp := query(exec, "", "invalid")
 		assert.Equal(t, "", string(resp.Data))
-		assert.Equal(t, 1, len(resp.Errors))
-		assert.Equal(t, 1, len(errors1))
-		assert.Equal(t, 1, len(errors2))
+		assert.Len(t, resp.Errors, 1)
+		assert.Len(t, errors1, 1)
+		assert.Len(t, errors2, 1)
 	})
 
 	t.Run("query caching", func(t *testing.T) {
@@ -156,7 +156,7 @@ func TestExecutor(t *testing.T) {
 
 		t.Run("cache hits use document from cache", func(t *testing.T) {
 			doc, err := parser.ParseQuery(&ast.Source{Input: `query Bar {name}`})
-			require.Nil(t, err)
+			require.NoError(t, err)
 			cache.Add(ctx, qry, doc)
 
 			resp := query(exec, "Bar", qry)
@@ -216,8 +216,8 @@ func TestErrorServer(t *testing.T) {
 
 		resp := query(exec, "", "{name}")
 		assert.Equal(t, "null", string(resp.Data))
-		assert.Equal(t, 1, len(errors1))
-		assert.Equal(t, 1, len(errors2))
+		assert.Len(t, errors1, 1)
+		assert.Len(t, errors2, 1)
 	})
 }
 
