@@ -3,7 +3,6 @@ package templates
 import (
 	"embed"
 	"fmt"
-	"go/types"
 	"os"
 	"path/filepath"
 	"testing"
@@ -54,6 +53,9 @@ func TestToGo(t *testing.T) {
 	require.Equal(t, "Identities", ToGo("identities"))
 	require.Equal(t, "Iphone", ToGo("IPHONE"))
 	require.Equal(t, "IPhone", ToGo("iPHONE"))
+	require.Equal(t, "UserIdentity", ToGo("USER_IDENTITY"))
+	require.Equal(t, "UserIdentity", ToGo("UserIdentity"))
+	require.Equal(t, "UserIdentity", ToGo("userIdentity"))
 }
 
 func TestToGoPrivate(t *testing.T) {
@@ -302,6 +304,10 @@ func Test_wordWalker(t *testing.T) {
 			expected: []*wordInfo{{Word: "Related"}, {WordOffset: 1, Word: "Urls"}},
 		},
 		{
+			input:    makeInput("USER_IDENTITY"),
+			expected: []*wordInfo{{Word: "USER"}, {WordOffset: 1, Word: "IDENTITY"}},
+		},
+		{
 			input:    makeInput("ITicket"),
 			expected: []*wordInfo{{Word: "ITicket"}},
 		},
@@ -355,29 +361,4 @@ func TestRenderFS(t *testing.T) {
 
 	// don't look at last character since it's \n on Linux and \r\n on Windows
 	assert.Equal(t, expectedString, actualContentsStr[:len(expectedString)])
-}
-
-func TestTypeName(t *testing.T) {
-	testType := types.NewNamed(
-		types.NewTypeName(0, types.NewPackage(
-			"github.com/99designs/gqlgen/codegen/templates",
-			"templates",
-		), "testType", nil),
-		types.NewStruct(nil, nil),
-		nil,
-	)
-
-	tests := []struct {
-		input    types.Type
-		expected string
-	}{
-		{testType, "testType"},
-		{types.NewPointer(testType), "testType"},
-		{types.NewPointer(types.NewPointer(testType)), "*testType"},
-	}
-
-	for _, test := range tests {
-		result := typeName(test.input)
-		assert.Equal(t, test.expected, result)
-	}
 }

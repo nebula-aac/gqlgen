@@ -1,6 +1,6 @@
 package singlefile
 
-// THIS CODE IS A STARTING POINT ONLY. IT WILL NOT BE UPDATED WITH SCHEMA CHANGES.
+// THIS CODE WILL BE UPDATED WITH SCHEMA CHANGES. PREVIOUS IMPLEMENTATION FOR SCHEMA CHANGES WILL BE KEPT IN THE COMMENT SECTION. IMPLEMENTATION FOR UNCHANGED SCHEMA WILL BE KEPT.
 
 import (
 	"context"
@@ -264,11 +264,6 @@ func (r *queryResolver) DirectiveDouble(ctx context.Context) (*string, error) {
 
 // DirectiveUnimplemented is the resolver for the directiveUnimplemented field.
 func (r *queryResolver) DirectiveUnimplemented(ctx context.Context) (*string, error) {
-	panic("not implemented")
-}
-
-// DirectiveConcurrent is the resolver for the directiveConcurrent field.
-func (r *queryResolver) DirectiveConcurrent(ctx context.Context) ([]*ObjectDirectivesConcurrent, error) {
 	panic("not implemented")
 }
 

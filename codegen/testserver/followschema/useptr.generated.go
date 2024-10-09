@@ -122,27 +122,15 @@ func (ec *executionContext) _TestUnion(ctx context.Context, sel ast.SelectionSet
 	case nil:
 		return graphql.Null
 	case A:
-		if len(graphql.CollectFields(ec.OperationContext, sel, []string{"TestUnion", "A"})) == 0 {
-			return graphql.Empty{}
-		}
 		return ec._A(ctx, sel, &obj)
 	case *A:
-		if len(graphql.CollectFields(ec.OperationContext, sel, []string{"TestUnion", "A"})) == 0 {
-			return graphql.Empty{}
-		}
 		if obj == nil {
 			return graphql.Null
 		}
 		return ec._A(ctx, sel, obj)
 	case B:
-		if len(graphql.CollectFields(ec.OperationContext, sel, []string{"TestUnion", "B"})) == 0 {
-			return graphql.Empty{}
-		}
 		return ec._B(ctx, sel, &obj)
 	case *B:
-		if len(graphql.CollectFields(ec.OperationContext, sel, []string{"TestUnion", "B"})) == 0 {
-			return graphql.Empty{}
-		}
 		if obj == nil {
 			return graphql.Null
 		}
@@ -168,26 +156,6 @@ func (ec *executionContext) _A(ctx context.Context, sel ast.SelectionSet, obj *A
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("A")
 		case "id":
-			field := field
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return ec._A_id(ctx, field, obj)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
 			out.Values[i] = ec._A_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -227,26 +195,6 @@ func (ec *executionContext) _B(ctx context.Context, sel ast.SelectionSet, obj *B
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("B")
 		case "id":
-			field := field
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return ec._B_id(ctx, field, obj)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
 			out.Values[i] = ec._B_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++

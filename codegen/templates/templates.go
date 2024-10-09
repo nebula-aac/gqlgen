@@ -88,15 +88,15 @@ func Render(cfg Options) error {
 	}
 
 	roots := make([]string, 0, len(t.Templates()))
-	for _, templ := range t.Templates() {
+	for _, template := range t.Templates() {
 		// templates that end with _.gotpl are special files we don't want to include
-		if strings.HasSuffix(templ.Name(), "_.gotpl") ||
+		if strings.HasSuffix(template.Name(), "_.gotpl") ||
 			// filter out templates added with {{ template xxx }} syntax inside the template file
-			!strings.HasSuffix(templ.Name(), ".gotpl") {
+			!strings.HasSuffix(template.Name(), ".gotpl") {
 			continue
 		}
 
-		roots = append(roots, templ.Name())
+		roots = append(roots, template.Name())
 	}
 
 	// then execute all the important looking ones in order, adding them to the same file
@@ -220,7 +220,6 @@ func Funcs() template.FuncMap {
 		"render": func(filename string, tpldata any) (*bytes.Buffer, error) {
 			return render(resolveName(filename, 0), tpldata)
 		},
-		"typeName": typeName,
 	}
 }
 
@@ -496,18 +495,18 @@ func wordWalker(str string, f func(*wordInfo)) {
 		if initialisms[upperWord] {
 			// If the uppercase word (string(runes[w:i]) is "ID" or "IP"
 			// AND
-			// the word is the first two characters of the str
+			// the word is the first two characters of the current word
 			// AND
 			// that is not the end of the word
 			// AND
-			// the length of the string is greater than 3
+			// the length of the remaining string is greater than 3
 			// AND
 			// the third rune is an uppercase one
 			// THEN
 			// do NOT count this as an initialism.
 			switch upperWord {
 			case "ID", "IP":
-				if word == str[:2] && !eow && len(str) > 3 && unicode.IsUpper(runes[3]) {
+				if remainingRunes := runes[w:]; word == string(remainingRunes[:2]) && !eow && len(remainingRunes) > 3 && unicode.IsUpper(remainingRunes[3]) {
 					continue
 				}
 			}
@@ -648,16 +647,6 @@ func resolveName(name string, skip int) string {
 	return filepath.Join(filepath.Dir(callerFile), name)
 }
 
-func typeName(t types.Type) string {
-	name := types.TypeString(t, func(*types.Package) string {
-		return ""
-	})
-	if name != "" && strings.HasPrefix(name, "*") {
-		return name[1:]
-	}
-	return name
-}
-
 func render(filename string, tpldata any) (*bytes.Buffer, error) {
 	t := template.New("").Funcs(Funcs())
 
@@ -683,7 +672,7 @@ func write(filename string, b []byte, packages *code.Packages) error {
 
 	formatted, err := imports.Prune(filename, b, packages)
 	if err != nil {
-		_, _ = fmt.Fprintf(os.Stderr, "gofmt failed on %s: %s\n", filepath.Base(filename), err.Error())
+		fmt.Fprintf(os.Stderr, "gofmt failed on %s: %s\n", filepath.Base(filename), err.Error())
 		formatted = b
 	}
 
@@ -782,6 +771,8 @@ var CommonInitialisms = map[string]bool{
 	"XMPP":  true,
 	"XSRF":  true,
 	"XSS":   true,
+	"AWS":   true,
+	"GCP":   true,
 }
 
 // GetInitialisms returns the initialisms to capitalize in Go names. If unchanged, default initialisms will be returned
